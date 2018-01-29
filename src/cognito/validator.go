@@ -41,6 +41,10 @@ type awsRSAKey struct {
 	Pub *rsa.PublicKey `json:"-"`
 }
 
+type awsKeyObj struct {
+	Keys []awsRSAKey `json:"keys"`
+}
+
 // NewRS256Validator returns a token.Validator that is specifically designed for Cognito generated JWTs
 func NewRS256Validator(validUserPoolIDs []string, awsRegion string) (token.Validator, error) {
 	result := validator{region: awsRegion, issuer: fmt.Sprintf(cognitoIssuer, awsRegion), validUserPoolIDs: validUserPoolIDs}
@@ -62,6 +66,13 @@ func NewRS256Validator(validUserPoolIDs []string, awsRegion string) (token.Valid
 	return &result, nil
 }
 
+// NewRS256ValidatorFromKeys returns a token.Validator that is specifically designed for Cognito generated JWTs
+// To use this signature you must pass in the RSA public key information yourself.  To automatically download them use
+// NewRS256Validator instead.
+func NewRS256ValidatorFromKeys(validUserPoolIDs []string, awsRegion string, keys map[string]awsRSAKey) token.Validator {
+	return &validator{region: awsRegion, issuer: fmt.Sprintf(cognitoIssuer, awsRegion), validUserPoolIDs: validUserPoolIDs, keys: keys}
+}
+
 func downloadCerts(region string, userPoolID string) ([]awsRSAKey, error) {
 	url := fmt.Sprintf(certURL, region, userPoolID)
 	resp, err := http.Get(url)
@@ -77,34 +88,34 @@ func downloadCerts(region string, userPoolID string) ([]awsRSAKey, error) {
 		return nil, fmt.Errorf("Could not download RSA cert info.  Status code %d", resp.StatusCode)
 	}
 
-	var keys []awsRSAKey
+	var keyObj awsKeyObj
 	dec := json.NewDecoder(resp.Body)
-	err = dec.Decode(&keys)
+	err = dec.Decode(&keyObj)
 	if err != nil {
-		return nil, fmt.Errorf("Could not parse RSA cert into: %s", err.Error())
+		return nil, fmt.Errorf("Could not parse RSA cert JSON: %s", err.Error())
 	}
 
-	for k, v := range keys {
+	for k, v := range keyObj.Keys {
 		v.Pub, err = parseRSAPublicKey(v.N, v.E)
 		if err != nil {
 			return nil, err
 		}
-		keys[k] = v
+		keyObj.Keys[k] = v
 	}
 
-	return keys, nil
+	return keyObj.Keys, nil
 }
 
 // converts base64 encoded N and E strings into a rsa.PublicKey
 func parseRSAPublicKey(nStr string, eStr string) (*rsa.PublicKey, error) {
-	decN, err := base64.StdEncoding.DecodeString(nStr)
+	decN, err := base64.RawURLEncoding.DecodeString(nStr)
 	if err != nil {
 		return nil, fmt.Errorf("Error decoding N string from public key: %s", err.Error())
 	}
 	n := big.NewInt(0)
 	n.SetBytes(decN)
 
-	decE, err := base64.StdEncoding.DecodeString(eStr)
+	decE, err := base64.RawURLEncoding.DecodeString(eStr)
 	if err != nil {
 		return nil, fmt.Errorf("Error decoding E string from public key: %s", err.Error())
 	}
