@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"math/big"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -204,16 +203,13 @@ func (v *validator) Validate(tokenString string) (token.Claim, error) {
 
 	// check expiration if set
 	if exp, ok := t.Claims["exp"]; ok {
-		if expStr, ok := exp.(string); ok {
-			expInt, err := strconv.ParseInt(expStr, 10, 64)
-			if err != nil {
-				return result, fmt.Errorf("Token expiration not properly formatted")
-			}
+		if expFloat, ok := exp.(float64); ok {
+			expInt := int64(expFloat)
 			if expInt < time.Now().UTC().Unix() {
 				return result, fmt.Errorf("Token expired")
 			}
 		} else {
-			return result, fmt.Errorf("Token expiration not properly formatted")
+			return result, fmt.Errorf("Token expiration not properly formatted %#v", exp)
 		}
 	}
 
