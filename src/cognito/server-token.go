@@ -18,8 +18,8 @@ func GetAdminAccessToken(username, password, clientID, userPoolID string) (strin
 	req := &cognitoidentityprovider.AdminInitiateAuthInput{
 		AuthFlow: aws.String(cognitoidentityprovider.AuthFlowTypeAdminNoSrpAuth),
 		AuthParameters: map[string]*string{
-			"USERNAME":    aws.String(username),
-			"SECRET_HASH": aws.String(password),
+			"USERNAME": aws.String(username),
+			"PASSWORD": aws.String(password),
 		},
 		ClientId:   aws.String(clientID),
 		UserPoolId: aws.String(userPoolID),
