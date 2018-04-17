@@ -13,7 +13,11 @@ import (
 // This should probably only be used against a segregated user pool that doesn't have public users
 // This will require ADMIN_NO_SRP_AUTH to be enabled an no additional challenges
 func GetAdminAccessToken(username, password, clientID, userPoolID string) (string, error) {
-	sess := session.Must(session.NewSession())
+	sess, err := session.NewSession()
+	if err != nil {
+		return "", err
+	}
+
 	cog := cognitoidentityprovider.New(sess, nil)
 	req := &cognitoidentityprovider.AdminInitiateAuthInput{
 		AuthFlow: aws.String(cognitoidentityprovider.AuthFlowTypeAdminNoSrpAuth),
