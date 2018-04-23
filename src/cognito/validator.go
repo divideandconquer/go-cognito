@@ -219,7 +219,7 @@ func (v *validator) Validate(tokenString string) (token.Claim, error) {
 	return result, nil
 }
 
-func (v *validator) ValidateRequest(r *http.Request) (Claim, error) {
+func (v *validator) ValidateRequest(r *http.Request) (token.Claim, error) {
 	jwt := r.Header.Get("Authorization")
 	jwt = strings.TrimPrefix(jwt, "Bearer ")
 	return v.Validate(jwt)
