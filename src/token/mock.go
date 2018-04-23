@@ -1,5 +1,7 @@
 package token
 
+import "net/http"
+
 type mockValidator struct {
 	claim Claim
 	err   error
@@ -11,5 +13,9 @@ func NewMockValidator(c Claim, err error) Validator {
 }
 
 func (m *mockValidator) Validate(jwt string) (Claim, error) {
+	return m.claim, m.err
+}
+
+func (m *mockValidator) ValidateRequest(r *http.Request) (Claim, error) {
 	return m.claim, m.err
 }
